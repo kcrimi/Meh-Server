@@ -169,23 +169,41 @@ Parse.Cloud.define("meh", function(request, response) {
   var jsonobj = { venueId: request.params.venueId }
   query.equalTo("foursquare_id", request.params.venueId);
   query.equalTo("user_id", request.params.userId);
-  promises.push(query.find({
-    success: function(results){
-      if(results.length == 0 ){
-        var m = new Meh();
-        m.set("foursquare_id", request.params.venueId);
-        m.set("user_id", request.params.userId);
-        m.save();
-      }
-      jsonobj.mehed = true;
-    },
-    error: function(error) {
-      alert("Error: " +error.code + " " + error.message);
+
+  query.find()
+  .then(function(results) {
+    if (results.length == 0) {
+      var m = new Meh();
+      m.set("foursquare_id", request.params.venueId);
+      m.set("user_id", request.params.userId);
+      m.save();
     }
-  }));
-  Parse.Promise.when(promises).then(function(){
+    jsonobj.mehed = true;
+  }, function(error) {
+    response.error("Error: " + error.code + " " + error.message);
+  }).then(function() {
     response.success(jsonobj);
-  });
+  })
+
+
+
+  // promises.push(query.find({
+  //   success: function(results){
+  //     if(results.length == 0 ){
+  //       var m = new Meh();
+  //       m.set("foursquare_id", request.params.venueId);
+  //       m.set("user_id", request.params.userId);
+  //       m.save();
+  //     }
+  //     jsonobj.mehed = true;
+  //   },
+  //   error: function(error) {
+  //     alert("Error: " +error.code + " " + error.message);
+  //   }
+  // }));
+  // Parse.Promise.when(promises).then(function(){
+  //   response.success(jsonobj);
+  // });
 }) 
 
 Parse.Cloud.define("unmeh", function(request, response) {
