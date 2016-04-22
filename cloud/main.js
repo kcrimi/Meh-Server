@@ -64,13 +64,12 @@ function cacheVenues(items) {
       console.log(" results = " + results.length + " ids = "+venueIds.length);
 
       _.each(items, function(item) {
-        var venue = new Venue();
-        _.each(results, function(result) {
-          if (item.venue.id == result.get("foursquare_id")){
-            venue = result;
-            return;
+        var venue = _.find(results, function(result) {
+          if (item.venue.id == result.get("foursquare_id")) {
+            return result;
           }
         });
+        venue != null ? venue : new Venue();
 
         venue.set("name", item.venue.name);
         venue.set("foursquare_id", item.venue.id);
