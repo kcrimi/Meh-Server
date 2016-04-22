@@ -112,40 +112,26 @@ function addMehDataToItems(items, userId) {
   var venueIds = _.map(items, function(item) {
     return item.venue.id;
   });
+  console.log("user = "+userId + " venues "+ venueIds);
   var query = new Parse.Query(Meh);
   query.equalTo("user_id", userId);
   query.containedIn("foursquare_id", venueIds);
 
   return query.find()
   .then(function(results) {
+    console.log("results = "+results);
     _.each(results, function(result) {
       var item = _.find(items, function(item) {
         if (item.venue.id == result.get("foursquare_id")) {
           return item;
         }
       });
-      item.mehed = true;
+      item.venue.mehed = true;
     })
     return Parse.Promise;
   }, function(error) {
     alert("Error: " + error.code + " " + error.message);
   });
-}
-
-function addMehDataToItem(item, userId) {
-  promises = [];
-  var query = new Parse.Query(Meh);
-  query.equalTo("foursquare_id", item.venue.id);
-  query.equalTo("user_id", userId);
-  promises.push(query.find({
-    success: function(results){
-      item.venue.mehed = results.length > 0;
-    },
-    error: function(error) {
-      alert("Error: " + error.code + " " + error.message);
-    }
-  }))
-  return Parse.Promise.when(promises);
 }
 
 //Retrieve Venue Detail
@@ -166,30 +152,14 @@ Parse.Cloud.define("getVenueDetail", function(request, response){
     return jsonobj;
   }, function(httpResponse) {
     console.error('Request failed with response code ' + httpResponse.status);
-  }
-  ).then(function(jsonobj) {
-    return addMehDataToItem(jsonobj.response, request.params.userId);
+  }).then(function(jsonobj) {
+    return Parse.Promise.when(addMehDataToItems([jsonobj.response], request.params.userId));
   }).then(function() {
     response.success(jsonobj);
   },
   function(error) {
     response.error("Cloud Code Failed");
   });
-
-  // Parse.Cloud.httpRequest({
-  //   method: "GET",
-  //   url: api_url,
-  //   success: function(httpResponse) {
-  //     var jsonobj = JSON.parse(httpResponse.text);
-  //     promises.push(addMehDataToItem(jsonobj.response, request.params.userId));
-  //     Parse.Promise.when(promises).then(function() {
-  //       response.success(jsonobj);
-  //     })
-  //   },
-  //   error: function(httpResponse) {
-  //     console.error('Request failed with response code ' + httpResponse.status);
-  //   }
-  // });
 })
 
 // Mehing
