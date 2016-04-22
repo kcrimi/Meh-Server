@@ -69,7 +69,7 @@ function cacheVenues(items) {
             return result;
           }
         });
-        venue != null ? venue : new Venue();
+        venue = (venue != null) ? venue : new Venue();
 
         venue.set("name", item.venue.name);
         venue.set("foursquare_id", item.venue.id);
@@ -109,8 +109,6 @@ function addCachedVenueData(items) {
 
 
 function addMehDataToItems(items, userId) {
-  console.log("adding meh data");
-
   var venueIds = _.map(items, function(item) {
     return item.venue.id;
   });
@@ -134,17 +132,6 @@ function addMehDataToItems(items, userId) {
   });
 }
 
-function _addMehDataToItems(items, userId) {
-  console.log("adding meh data");
-  var promises = [];
-  for (var i = 0; i < items.length; i ++) {
-    (function(i) {
-      promises.push(addMehDataToItem(items[i], userId));
-    }) (i, items);
-  }
-  return Parse.Promise.when(promises);
-}
-
 function addMehDataToItem(item, userId) {
   promises = [];
   var query = new Parse.Query(Meh);
@@ -163,7 +150,7 @@ function addMehDataToItem(item, userId) {
 
 //Retrieve Venue Detail
 Parse.Cloud.define("getVenueDetail", function(request, response){
-  var promises = [];
+  var jsonobj;
   var api_url = foursquare_api_url + "venues/"
     + request.params.venueId + "?"
     + "v=" + foursquare_version + "&"
@@ -173,18 +160,36 @@ Parse.Cloud.define("getVenueDetail", function(request, response){
 
   Parse.Cloud.httpRequest({
     method: "GET",
-    url: api_url,
-    success: function(httpResponse) {
-      var jsonobj = JSON.parse(httpResponse.text);
-      promises.push(addMehDataToItem(jsonobj.response, request.params.userId));
-      Parse.Promise.when(promises).then(function() {
-        response.success(jsonobj);
-      })
-    },
-    error: function(httpResponse) {
-      console.error('Request failed with response code ' + httpResponse.status);
-    }
+    url: api_url
+  }).then(function(httpResponse) {
+    jsonobj = JSON.parse(httpResponse.text);
+    return jsonobj;
+  }, function(httpResponse) {
+    console.error('Request failed with response code ' + httpResponse.status);
+  }
+  ).then(function(jsonobj) {
+    return addMehDataToItem(jsonobj.response, request.params.userId);
+  }).then(function() {
+    response.success(jsonobj);
+  },
+  function(error) {
+    response.error("Cloud Code Failed");
   });
+
+  // Parse.Cloud.httpRequest({
+  //   method: "GET",
+  //   url: api_url,
+  //   success: function(httpResponse) {
+  //     var jsonobj = JSON.parse(httpResponse.text);
+  //     promises.push(addMehDataToItem(jsonobj.response, request.params.userId));
+  //     Parse.Promise.when(promises).then(function() {
+  //       response.success(jsonobj);
+  //     })
+  //   },
+  //   error: function(httpResponse) {
+  //     console.error('Request failed with response code ' + httpResponse.status);
+  //   }
+  // });
 })
 
 // Mehing
