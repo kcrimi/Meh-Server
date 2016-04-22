@@ -153,7 +153,7 @@ Parse.Cloud.define("getVenueDetail", function(request, response){
   }, function(httpResponse) {
     console.error('Request failed with response code ' + httpResponse.status);
   }).then(function(jsonobj) {
-    return Parse.Promise.when(addMehDataToItems([jsonobj.response], request.params.userId));
+    return addMehDataToItems([jsonobj.response], request.params.userId);
   }).then(function() {
     response.success(jsonobj);
   },
