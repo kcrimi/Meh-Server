@@ -1,7 +1,7 @@
 var Venue = new Parse.Object.extend("Venue");
 var Meh = new Parse.Object.extend("Meh");
 var AppEvent = new Parse.Object.extend("AppEvent");
-var _ = require('underscore.js');
+var _ = require('underscore');
 var foursquare_api_url = "https://api.foursquare.com/v2/";
 var client_id = "3MYFOZ3MQD4OY1JFGRUZ3SJI2ILUISEPM3NK1DCZ5GBWUM0E";
 var client_secret = 'VKLJ4D1LRYCY4FE4J1VB1LOY4YX2ORFEA0KZUCRCACARG3OH';
@@ -22,13 +22,12 @@ Parse.Cloud.define("explore", function(request, response) {
     method: "GET",
     url: api_url
   }).then(function(httpResponse) {
-    console.log("succesfull call to foursquare");
     jsonobj = JSON.parse(httpResponse.text);
     return jsonobj.response.groups[0].items;
   }, function(error) {
-    console("error calling foursquare");
     jsonobj = JSON.parse(httpResponse.text);
     if (jsonobj.meta.errorType != null){
+      // Pass along Foursquare API error
       response.success(jsonobj);
     } else {
       response.error("Parse Cloud Code Error")
@@ -49,47 +48,11 @@ Parse.Cloud.define("explore", function(request, response) {
   }, function(error) {
     response.error("Cloud Code Error")
   })
-
-
-  // Parse.Cloud.httpRequest({
-  //   method: "GET",
-  //   url: api_url,
-  //   success: function(httpResponse) {
-  //     console.log("succesfull call to foursquare");
-  //     var jsonobj = JSON.parse(httpResponse.text);
-  //     var items = jsonobj.response.groups[0].items;
-  //     if (items.length){
-  //       if (items[0].venue.hasOwnProperty('price')) {
-  //       promises.push(cacheVenues(items));
-  //       }else{
-  //         promises.push(addCachedVenueData(items));
-  //       }
-  //       promises.push(addMehDataToItems(items, request.params.userId));
-  //     }
-  //     Parse.Promise.when(promises).then(function() {
-  //       console.log("all promises resolved");
-  //       response.success(jsonobj);
-  //     },function() {response.error("Bad error")});
-  //   },
-  //   error: function(httpResponse) {
-  //     console("error calling foursquare");
-  //     jsonobj = JSON.parse(httpResponse.text);
-  //     if (jsonobj.meta.errorType != null) {
-  //       // If Foursquare kicks back an error response, pass along to the app
-  //       response.success(jsonobj);
-  //     }else{
-  //       response.error("Parse Cloud Code Error");
-  //     }
-  //   }
-  // });;
 })
 
 function cacheVenues(items) {
-  console.log("caching venue data");
-
-  var venueIds = [];
-  items.forEach(function(item) {
-    venueIds.push(item.venue.id);
+  var venueIds = _.map(items, function(item) {
+    return item.venue.id;
   });
 
   var query = new Parse.Query(Venue);
@@ -99,14 +62,15 @@ function cacheVenues(items) {
     function(results) {
       var promises = [];
       console.log(" results = " + results.length + " ids = "+venueIds.length);
-      items.forEach(function(item){
+
+      _.each(items, function(item) {
         var venue = new Venue();
-        for (var i = 0; i < results.length; i++) {
-          if (item.venue.id == results[i].get("foursquare_id")){
-            venue = results[i];
-            break;
+        _.each(results, function(result) {
+          if (item.venue.id == result.get("foursquare_id")){
+            venue = result;
+            return;
           }
-        }
+        });
 
         venue.set("name", item.venue.name);
         venue.set("foursquare_id", item.venue.id);
@@ -117,39 +81,12 @@ function cacheVenues(items) {
       return Parse.Promise.when(promises);
     }
   )
-
-  // for (var i = 0; i < items.length; i++ ){
-  //   (function(i) {
-  //     var venue = items[i].venue;
-  //     var query = new Parse.Query(Venue);
-  //     query.equalTo("foursquare_id", venue.id);
-  //     promises.push(query.find({
-  //       success: function(results){
-  //         if(results.length > 0){
-  //           var v = results[0];
-  //         }else{
-  //           var v = new Venue();
-  //         }
-  //         v.set("name", venue.name);
-  //         v.set("foursquare_id", venue.id);
-  //         v.set("price", venue.price);
-  //         v.set("hours", venue.hours);
-  //         return v.save();
-  //       },
-  //       error: function(error) {
-  //         alert("Error: " +error.code + " " + error.message);
-  //       }
-  //     }));
-  //   })(i, items);
-  // }
-  // return Parse.Promise.when(promises);
 }
 
 function addCachedVenueData(items) {
 
-  var venueIds = [];
-  items.forEach(function(item) {
-    venueIds.push(item.venue.id);
+  var venueIds = _.map(items, function(item) {
+    return item.venue.id;
   });
   var query = new Parse.Query(Venue);
   query.containedIn("foursquare_id", venueIds);
@@ -169,35 +106,14 @@ function addCachedVenueData(items) {
     alert("Error: " + error.code + " " + error.message);
   })
 
-  // console.log("adding cached data");
-  // var promises = [];
-  // for (var i = 0; i < items.length; i ++) {
-  //   (function(i) {
-  //     var query = new Parse.Query(Venue);
-  //     query.equalTo("foursquare_id", items[i].venue.id);
-  //     promises.push(query.find({
-  //       success: function(results){
-  //         if(results.length > 0){
-  //           items[i].venue.name = results[0].get("name");
-  //           items[i].venue.price = results[0].get("price");
-  //           items[i].venue.hours = results[0].get("hours");
-  //         }
-  //       },
-  //       error: function(error) {
-  //         alert("Error: " + error.code + " " + error.message);
-  //       }
-  //     }));
-  //   }) (i, items);
-  // }
-  // return Parse.Promise.when(promises);
 } 
 
 
 function addMehDataToItems(items, userId) {
   console.log("adding meh data");
-  var venueIds = [];
-  items.forEach(function(item) {
-    venueIds.push(item.venue.id);
+
+  var venueIds = _.map(items, function(item) {
+    return item.venue.id;
   });
   var query = new Parse.Query(Meh);
   query.equalTo("user_id", userId);
