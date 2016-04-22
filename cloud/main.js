@@ -104,8 +104,7 @@ function addCachedVenueData(items) {
     return Parse.Promise
   }, function(error) {
     alert("Error: " + error.code + " " + error.message);
-  })
-
+  });
 } 
 
 
@@ -122,11 +121,12 @@ function addMehDataToItems(items, userId) {
   return query.find()
   .then(function(results) {
     _.each(results, function(result) {
-      _.each(items, function(item) {
+      var item = _.find(items, function(item) {
         if (item.venue.id == result.get("foursquare_id")) {
-          item.venue.mehed = true;
+          return item;
         }
-      })
+      });
+      item.mehed = true;
     })
     return Parse.Promise;
   }, function(error) {
