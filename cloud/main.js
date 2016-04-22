@@ -164,9 +164,8 @@ Parse.Cloud.define("getVenueDetail", function(request, response){
 
 // Mehing
 Parse.Cloud.define("meh", function(request, response) {
-  var promises = [];
-  var query = new Parse.Query(Meh);
   var jsonobj = { venueId: request.params.venueId }
+  var query = new Parse.Query(Meh);
   query.equalTo("foursquare_id", request.params.venueId);
   query.equalTo("user_id", request.params.userId);
 
@@ -184,46 +183,27 @@ Parse.Cloud.define("meh", function(request, response) {
   }).then(function() {
     response.success(jsonobj);
   })
-
-
-
-  // promises.push(query.find({
-  //   success: function(results){
-  //     if(results.length == 0 ){
-  //       var m = new Meh();
-  //       m.set("foursquare_id", request.params.venueId);
-  //       m.set("user_id", request.params.userId);
-  //       m.save();
-  //     }
-  //     jsonobj.mehed = true;
-  //   },
-  //   error: function(error) {
-  //     alert("Error: " +error.code + " " + error.message);
-  //   }
-  // }));
-  // Parse.Promise.when(promises).then(function(){
-  //   response.success(jsonobj);
-  // });
 }) 
 
 Parse.Cloud.define("unmeh", function(request, response) {
-  var promises = [];
-  var query = new Parse.Query(Meh);
   var jsonobj = { venueId: request.params.venueId }
+  var query = new Parse.Query(Meh);
   query.equalTo("foursquare_id", request.params.venueId);
   query.equalTo("user_id", request.params.userId);
-  promises.push(query.first({
-    success: function(result){
-      result.destroy();
-    },
-    error: function(error) {
-      alert("Error: " +error.code + " " + error.message);
-    }
-  }));
-  jsonobj.mehed = false;
-  Parse.Promise.when(promises).then(function(){
+
+  query.find()
+  .then(function(results) {
+    var promises = [];
+    _.each(results, function(result) {
+      promises.push(result.destroy());
+    })
+    return Parse.Promise.when(promises);
+  }, function(error) {
+    response.error("Error: " +error.code + " " + error.message);
+  }).then(function() {
+    jsonobj.mehed = false;
     response.success(jsonobj);
-  });
+  })
 }) 
 
 // Check for AppEvents
