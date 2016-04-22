@@ -1,0 +1,10 @@
+{
+  "applications": {
+    "Meh": {
+      "applicationId": "6dRPY8MpYhTPQtdwz7wRnccFYh4lRyNYVQWaVmne"
+    },
+    "_default": {
+      "link": "Meh"
+    }
+  }
+}
