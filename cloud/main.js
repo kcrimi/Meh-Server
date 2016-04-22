@@ -93,13 +93,14 @@ function addCachedVenueData(items) {
   return query.find()
   .then(function(results){
     _.each(results, function(result) {
-      _.each(items, function(item) {
-        if (result.get("foursquare_id") == item.venue.id){
-          item.venue.price = result.get("price");
-          item.venue.hours = result.get("hours");
+      var item = _.find(items, function (item) {
+        if (item.venue.id == result.get("foursquare_id")) {
+          return item;
         }
-      })
-    })
+      });
+      item.venue.price = result.get("price");
+      item.venue.hours = result.get("hours");
+    });
     return Parse.Promise
   }, function(error) {
     alert("Error: " + error.code + " " + error.message);
