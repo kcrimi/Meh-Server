@@ -215,19 +215,16 @@ Parse.Cloud.define("getMinVersion", function(request, response) {
   query.greaterThan("appVersion", request.params.currentVersion);
   query.equalTo("eventType", "min_app_version");
   query.lessThan("startDate", new Date());
-  promises.push(query.find({
-    success: function(result) {
-      for (var i = 0; i < result.length; i++) {
-        jsonobj['appEvents'].push(result[i]);
-      }
-    },
-    error: function(error) {
-      alert("Error: " +error.code + " " + error.message);
- 
-    }
-  }));
-  Parse.Promise.when(promises).then(function(){
-    response.success(jsonobj)
+
+  query.find()
+  .then(function(results) {
+    return _.each(results, function(result) {
+      jsonobj['appEvents'].push(result);
+    })
+  },function(error) {
+    response.error("Error: " +error.code + " " + error.message);
+  }).then(function(){
+    response.success(jsonobj);
   })
 })
 
